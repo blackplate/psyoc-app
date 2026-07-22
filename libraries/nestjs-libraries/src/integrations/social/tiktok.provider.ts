@@ -31,14 +31,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   name = 'Tiktok';
   isBetweenSteps = false;
   convertToJPEG = true;
-  scopes = [
-    'video.list',
-    'user.info.basic',
-    'video.publish',
-    'video.upload',
-    'user.info.profile',
-    'user.info.stats',
-  ];
+  // Exactly the scopes registered on the Psyoc TikTok app, nothing more:
+  // the audit requires every requested scope to be demonstrable, and TikTok
+  // denies the whole OAuth request when a scope is not granted to the app.
+  // username (user.info.profile) is gone with the wider scopes, so the
+  // user/info calls below request basic fields only and store display_name.
+  scopes = ['user.info.basic', 'video.publish', 'video.upload'];
   override maxConcurrentJob = 10000;
   dto = TikTokDto;
   editor = 'normal' as const;
@@ -287,11 +285,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id, username },
+        user: { avatar_url, display_name, open_id },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
         {
           method: 'GET',
           headers: {
@@ -308,7 +306,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       id: open_id.replace(/-/g, ''),
       name: display_name,
       picture: avatar_url || '',
-      username: username,
+      username: display_name,
     };
   }
 
@@ -366,11 +364,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id, username },
+        user: { avatar_url, display_name, open_id },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
         {
           method: 'GET',
           headers: {
@@ -387,7 +385,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       refreshToken: refresh_token,
       expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
       picture: avatar_url,
-      username: username,
+      username: display_name,
     };
   }
 
