@@ -21,15 +21,11 @@ export const BillingAfter = () => {
       </div>
       <div className="text-center mb-[20px] text-xl [@media(max-width:1024px)]:text-xl">
         <h1 className="text-3xl [@media(max-width:1024px)]:text-xl">
-          {t(
-            'join_10000_entrepreneurs_who_use_postiz',
-            'Join 10,000+ Entrepreneurs Who Use Psyoc'
-          )}
+          {/* Upstream shows a user-count claim here; that number is about
+              Postiz, not this fork, so it stays out. */}
+          Schedule Your TikTok Content
           <br />
-          {t(
-            'to_manage_all_your_social_media_channels',
-            'To Manage All Your Social Media Channels'
-          )}
+          With Psyoc
         </h1>
         <br />
         {user?.allowTrial && (

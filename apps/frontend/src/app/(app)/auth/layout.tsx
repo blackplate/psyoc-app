@@ -3,7 +3,6 @@ import { getT } from '@gitroom/react/translation/get.translation.service.backend
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
-import { TestimonialComponent } from '@gitroom/frontend/components/auth/testimonial.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 export default async function AuthLayout({
@@ -23,15 +22,10 @@ export default async function AuthLayout({
           <div className="flex">{children}</div>
         </div>
       </div>
-      <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
-        <div className="text-center">
-          Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
-          Entrepreneurs use
-          <br />
-          Psyoc To Grow Their Social Presence
-        </div>
-        <TestimonialComponent />
-      </div>
+      {/* Upstream ships a testimonial wall + user-count claim here. Those
+          quotes and numbers are about Postiz, not this fork, so showing them
+          rebranded would fabricate endorsements. Deliberately removed. */}
+      <div className="flex-1 hidden lg:flex" />
     </div>
   );
 }
