@@ -76,12 +76,27 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   // new MastodonCustomProvider(),
 ];
 
+// ALLOWED_INTEGRATIONS narrows the connectable providers to a comma-separated
+// identifier list (e.g. "tiktok"). Unset means all providers, matching stock
+// behavior. Filtering here rather than in the list keeps lookups for already
+// connected channels working even if the allowlist later shrinks.
+const allowedIntegrations = (process.env.ALLOWED_INTEGRATIONS || '')
+  .split(',')
+  .map((identifier) => identifier.trim().toLowerCase())
+  .filter(Boolean);
+
+export const enabledIntegrationList = allowedIntegrations.length
+  ? socialIntegrationList.filter((p) =>
+      allowedIntegrations.includes(p.identifier)
+    )
+  : socialIntegrationList;
+
 @Injectable()
 export class IntegrationManager {
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
+        enabledIntegrationList.map(async (p) => ({
           name: p.name,
           identifier: p.identifier,
           toolTip: p.toolTip,
