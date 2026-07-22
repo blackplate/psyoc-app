@@ -219,7 +219,7 @@ export function RegisterAfter({
                 )}
                 &nbsp;
                 <a
-                  href={`https://psyoc.com/terms`}
+                  href={`https://psyoc.com/terms-of-service/`}
                   className="underline hover:font-bold"
                   rel="nofollow"
                 >
@@ -228,7 +228,7 @@ export function RegisterAfter({
                 &nbsp;
                 {t('and', 'and')}&nbsp;
                 <a
-                  href={`https://psyoc.com/privacy`}
+                  href={`https://psyoc.com/privacy-policy/`}
                   rel="nofollow"
                   className="underline hover:font-bold"
                 >
