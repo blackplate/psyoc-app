@@ -1,7 +1,67 @@
 import {
-  IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional
+  IsBoolean,
+  ValidateIf,
+  IsIn,
+  IsString,
+  MaxLength,
+  IsOptional,
+  registerDecorator,
+  ValidationArguments,
+  ValidationOptions,
 } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+
+// TikTok rejects branded content (brand_content_toggle) published with private
+// (SELF_ONLY) visibility, so the choice is invalid at save time and the post
+// button stays blocked until the user picks a public / friends option. This
+// mirrors the frontend hint; it is the enforcement half of that guideline.
+function BrandedContentNotPrivate(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'brandedContentNotPrivate',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const dto = args.object as TikTokDto;
+          return !(dto.brand_content_toggle && value === 'SELF_ONLY');
+        },
+        defaultMessage() {
+          return 'Branded content visibility cannot be set to private (Only me).';
+        },
+      },
+    });
+  };
+}
+
+// When the commercial-content disclosure toggle is on, TikTok requires the user
+// to indicate whether the content promotes their own brand, a third party, or
+// both; with neither selected the post is invalid and the publish button stays
+// blocked. `disclose` is a UI-only flag that already rides along in the post
+// settings, so we read it here without declaring it as a stored field. Skipped
+// for UPLOAD, where TikTok ignores disclosure entirely.
+function DisclosureRequiresBrand(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'disclosureRequiresBrand',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(_value: any, args: ValidationArguments) {
+          const dto = args.object as TikTokDto & { disclose?: boolean };
+          if (dto.content_posting_method === 'UPLOAD') return true;
+          if (!dto.disclose) return true;
+          return !!(dto.brand_organic_toggle || dto.brand_content_toggle);
+        },
+        defaultMessage() {
+          return 'You need to indicate if your content promotes yourself, a third party, or both.';
+        },
+      },
+    });
+  };
+}
 
 // TikTok only honors most of these settings on a DIRECT_POST. With
 // content_posting_method=UPLOAD the media lands in the user's TikTok inbox as a
@@ -20,6 +80,12 @@ export class TikTokDto {
   })
   title: string;
 
+  // Required for a DIRECT_POST and must be the user's explicit choice - TikTok
+  // guidelines forbid a preselected default. Skipped for UPLOAD, where TikTok
+  // ignores privacy entirely. Must be one of the privacy_level_options the
+  // creator_info API returns for the account, and cannot be SELF_ONLY when the
+  // post is branded content.
+  @ValidateIf((p) => p.content_posting_method !== 'UPLOAD')
   @IsIn([
     'PUBLIC_TO_EVERYONE',
     'MUTUAL_FOLLOW_FRIENDS',
@@ -27,9 +93,14 @@ export class TikTokDto {
     'SELF_ONLY',
   ])
   @IsString()
+  @BrandedContentNotPrivate()
   @JSONSchema({
     description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
+      'Required for content_posting_method=DIRECT_POST and must come from the ' +
+      "user's explicit choice (no default). Must be one of the " +
+      'privacy_level_options returned by TikTok creator_info for the account. ' +
+      'Branded content (brand_content_toggle=true) cannot be SELF_ONLY. ' +
+      'Ignored by TikTok on UPLOAD.',
   })
   privacy_level:
     | 'PUBLIC_TO_EVERYONE'
@@ -66,6 +137,7 @@ export class TikTokDto {
   autoAddMusic: 'yes' | 'no';
 
   @IsBoolean()
+  @DisclosureRequiresBrand()
   @JSONSchema({
     description:
       'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',

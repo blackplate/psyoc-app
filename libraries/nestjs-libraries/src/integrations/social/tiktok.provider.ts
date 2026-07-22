@@ -412,6 +412,39 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // Full creator_info/query response, surfaced to the composer through the
+  // generic /integrations/function mechanism. TikTok's Content Sharing
+  // Guidelines require the posting UI to show which account the content posts
+  // to and to honor the creator's current privacy / interaction settings, and
+  // to keep that info fresh when the page is rendered - so the frontend calls
+  // this on open rather than caching it. this.fetch (not the global fetch) so a
+  // 401 raises RefreshToken and the /function route refreshes the token.
+  async creatorInfo(accessToken: string) {
+    const { data } = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).json();
+
+    return {
+      creator_nickname: data?.creator_nickname,
+      creator_username: data?.creator_username,
+      creator_avatar_url: data?.creator_avatar_url,
+      privacy_level_options: data?.privacy_level_options ?? [],
+      comment_disabled: !!data?.comment_disabled,
+      duet_disabled: !!data?.duet_disabled,
+      stitch_disabled: !!data?.stitch_disabled,
+      max_video_post_duration_sec: data?.max_video_post_duration_sec,
+    };
+  }
+
   private async uploadedVideoSuccess(
     id: string,
     publishId: string,
@@ -520,8 +553,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             ? { title: firstPost.message }
             : {}),
           ...(isPhoto ? { description: firstPost.message } : {}),
-          privacy_level:
-            firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+          // No fallback: privacy_level is the user's explicit choice and is
+          // required by TikTokDto for a DIRECT_POST (guidelines forbid a
+          // default privacy value).
+          privacy_level: firstPost.settings.privacy_level,
           ...(isPhoto
             ? {}
             : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
