@@ -246,7 +246,7 @@ export const useMenuItem = () => {
           />
         </svg>
       ),
-      path: 'https://affiliate.postiz.com',
+      path: 'https://psyoc.com',
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
     },
