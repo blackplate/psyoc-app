@@ -1,0 +1,56 @@
+---
+name: Build Image
+
+# Builds the production container from Dockerfile.dev and publishes it to GHCR.
+# Upstream's own release pipeline builds the published image with `-f Dockerfile.dev`
+# (the name is misleading); we follow that, but target only linux/amd64 because the
+# deploy host is an x86_64 Hetzner box and arm64 would double CI time for nothing.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.dev
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/blackplate/psyoc-app:latest
+            ghcr.io/blackplate/psyoc-app:sha-${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            NEXT_PUBLIC_VERSION=sha-${{ steps.vars.outputs.short_sha }}
+          # Match upstream: keep the image a plain single-arch image with no
+          # provenance/SBOM attestations, which otherwise clutter the GHCR manifest.
+          provenance: false
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
