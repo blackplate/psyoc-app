@@ -34,6 +34,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { isAccountPending } from '@gitroom/backend/services/auth/permissions/account-approval';
 
 @ApiTags('User')
 @Controller('/user')
@@ -109,6 +110,7 @@ export class UsersController {
     // @ts-ignore
     return {
       ...user,
+      accountPending: isAccountPending(user.email),
       orgId: organization.id,
       totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY
         ? 10000

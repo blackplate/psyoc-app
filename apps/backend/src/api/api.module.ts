@@ -8,6 +8,7 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { AnalyticsController } from '@gitroom/backend/api/routes/analytics.controller';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { AccountApprovalGuard } from '@gitroom/backend/services/auth/permissions/account-approval';
 import { IntegrationsController } from '@gitroom/backend/api/routes/integrations.controller';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
@@ -85,6 +86,7 @@ const authenticatedController = [
     ExtractContentService,
     AuthMiddleware,
     PoliciesGuard,
+    AccountApprovalGuard,
     PermissionsService,
     CodesService,
     IntegrationManager,

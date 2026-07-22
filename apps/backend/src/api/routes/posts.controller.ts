@@ -9,6 +9,7 @@ import {
   Put,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -29,9 +30,11 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { AccountApprovalGuard } from '@gitroom/backend/services/auth/permissions/account-approval';
 
 @ApiTags('Posts')
 @Controller('/posts')
+@UseGuards(AccountApprovalGuard)
 export class PostsController {
   constructor(
     private _postsService: PostsService,

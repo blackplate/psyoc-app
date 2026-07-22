@@ -23,6 +23,10 @@ import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
 import * as Sentry from '@sentry/nestjs';
+import {
+  isApprovalGateActive,
+  isEmailApproved,
+} from '@gitroom/backend/services/auth/permissions/account-approval';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -59,6 +63,21 @@ export class AuthController {
         userAgent,
         getOrgFromCookie
       );
+
+      // Approval gate: tell the operator a pending account needs a decision.
+      // Fire and forget so a mail failure never breaks registration.
+      if (isApprovalGateActive() && body.email && !isEmailApproved(body.email)) {
+        this._emailService
+          .sendEmail(
+            process.env.APPROVAL_NOTIFY_EMAIL || 'support@psyoc.com',
+            'New Psyoc signup awaiting approval',
+            body.email,
+            'top'
+          )
+          .catch(() => {
+            // swallow: notification is best effort
+          });
+      }
 
       const activationRequired =
         body.provider === 'LOCAL' && this._emailService.hasProvider();

@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -32,9 +33,11 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { AccountApprovalGuard } from '@gitroom/backend/services/auth/permissions/account-approval';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
+@UseGuards(AccountApprovalGuard)
 export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
